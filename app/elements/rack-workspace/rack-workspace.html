@@ -1,0 +1,52 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<dom-module id="rack-workspace">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <audio-api id='audioContext'></audio-api>
+    <audio-clock id='masterClock'></audio-clock>
+
+    <drum-machine id='drums1'></drum-machine>
+
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'rack-workspace',
+
+      properties: {
+        foo: {
+          type: String,
+          value: 'rack-workspace',
+          notify: true
+        }
+      },
+      ready: function() {
+        this.$.masterClock.setContext(this.$.audioContext);
+        this.$.drums1.setContext(this.$.audioContext);
+
+        let dms = document.querySelectorAll('drum-machine');
+        this.$.masterClock.register( this.$.drums1.moveForward.bind(this.$.drums1) );
+
+      }
+    });
+  })();
+  </script>
+</dom-module>

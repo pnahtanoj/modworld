@@ -1,0 +1,124 @@
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<dom-module id="audio-clock">
+  <template>
+    <style include="iron-flex iron-flex-alignment"></style>
+    <style>
+      :host {
+        display: block;
+        background-color:#FFCC66;
+        padding: 1em;
+      }
+      #playBtn {
+        background-color: #CCFF66;
+        line-height: 1em;
+        /*height: 1em;*/
+      }
+      #tempo {
+        font-size: 1em;
+      }
+    </style>
+
+    <h1>Master Clock Info</h1>
+    
+    <div class="layout horizontal">
+      <p id='tempo'>Tempo: {{tempo}}</p>
+      <paper-slider min="10" max="220" value={{tempo}}></paper-slider>
+
+      <div class='flex'></div>
+  
+      <div class="layout horizontal">
+        <paper-button on-tap='startToggle' id='playBtn'>Play</paper-button>
+      </div>
+    </div>
+    
+  </template>
+  <script>
+  (function() {
+    'use strict';
+
+    Polymer({
+      is: 'audio-clock',
+
+      // privates //
+      _isPlaying: false,
+      _callbacks: [],
+
+      properties: {
+        tempo: {
+          type: Number,
+          value: 120,
+          notify: true
+        }
+      },
+      setContext: function(context) {
+        this.context = context;
+        return this;
+      },
+      startToggle: function() {
+        if (this._isPlaying) {
+          this.stop();
+        } else {
+          this.start();          
+        }
+      },
+      start: function() {
+        this._isPlaying = true;
+        this._updateButton();
+        this.futureTickTime = this.context.getCurrentTime();
+
+        this._playLoop();
+      },
+      stop: function() {
+        this._isPlaying = false;
+        this._updateButton();
+      },
+      register: function(cb) {
+        this._callbacks.push(cb);
+        console.log('registered: ', cb);
+      },
+      _playLoop: function() {
+        var t;
+
+        if (!this._isPlaying)
+          return;
+
+        while(this.futureTickTime < this.context.getCurrentTime() + 0.1) {
+          for (var i = 0; i < this._callbacks.length; i++) {
+            this._callbacks[i](this.futureTickTime);
+          }
+
+          this._incrementClock();
+        }
+
+        t = window.setTimeout(this._playLoop.bind(this), 50.0);
+      },
+      _incrementClock: function() {
+          this.futureTickTime += this._timeSliceLength(); // 120 bpm;
+          this.currentStep++;
+          if (this.currentStep > this.maxSteps)
+            this.currentStep = 1;
+      },
+      _timeSliceLength: function() {
+        return (60/this.tempo) * 0.25;
+      },
+      _updateButton: function() {
+        if (this._isPlaying)
+          this.$.playBtn.innerHTML = 'Stop';
+        else
+          this.$.playBtn.innerHTML = 'Play';
+      }
+    });
+  })();
+  </script>
+</dom-module>
