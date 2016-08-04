@@ -69,7 +69,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       setContext: function(context) {
         this.context = context;
 
-        this.$.metronome.setContext(this.context);
+        this.$.metronome
+          .setContext(this.context)
+          .mute();
 
         return this;
       },

@@ -23,6 +23,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <audio-clock id='masterClock'></audio-clock>
     
     <drum-machine id='drums1'></drum-machine>
+    <!-- <drum-machine id='drums2'></drum-machine> -->
 
   </template>
   <script>
@@ -42,8 +43,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       ready: function() {
         this.$.masterClock.setContext(this.$.audioContext);
         this.$.drums1.setContext(this.$.audioContext);
+        // this.$.drums2.setContext(this.$.audioContext);
 
         this.$.masterClock.register( this.$.drums1.moveForward.bind(this.$.drums1) );
+        // this.$.masterClock.register( this.$.drums2.moveForward.bind(this.$.drums2) );
 
       }
     });

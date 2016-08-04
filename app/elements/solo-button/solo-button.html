@@ -10,7 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
-<dom-module id="mute-button">
+<dom-module id="solo-button">
   <template>
     <style>
       :host {
@@ -18,40 +18,40 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
 
-    <paper-icon-button icon='{{_muteIcon}}' on-tap='toggle'></paper-icon-button>
+    <paper-icon-button icon='{{_icon}}' on-tap='toggle'></paper-icon-button>
   </template>
   <script>
   (function() {
     'use strict';
 
     Polymer({
-      is: 'mute-button',
-      _muteIcon: String,
+      is: 'solo-button',
+      _icon: String,
 
       properties: {
-        mute: {
+        solo: {
           type: Boolean,
           value: false,
           reflectToAttribute: true,        
           notify: true,
-          observer: 'setMuteIcon'
+          observer: 'setSoloIcon'
         }
 
       },
       ready: function() {
         this.set(false);
       },
-      set: function(mute) {
-        this.mute = mute;
-        this.setMuteIcon();
+      set: function(solo) {
+        this.solo = solo;
+        this.setSoloIcon();
       },
       toggle: function() {
-        this.mute = !this.mute;
-        this.setMuteIcon();
+        this.solo = !this.solo;
+        this.setSoloIcon();
         return this;
       },
-      setMuteIcon: function() {
-        this._muteIcon = (this.mute == '') ? 'av:volume-up' : 'av:volume-off';
+      setSoloIcon: function() {
+        this._icon = (this.solo) ? 'av:fiber-smart-record' : 'av:fiber-manual-record';
       }      
     });
   })();

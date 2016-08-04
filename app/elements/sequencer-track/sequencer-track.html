@@ -41,10 +41,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         @apply(--layout-horizontal);
         @apply(--layout-center);
       }
+      .bypassed {
+        opacity: 0.4;
+        /*background-color: red !important;*/
+      }
 
     </style>
-
-    <div id="container">
+    <div id="container" class$="{{_bypassClass}}">
 
       <div id='title'>{{title}}</div>
 
@@ -56,7 +59,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       <div id='controls'>
         <paper-slider min='0' max='100' value='{{_volume}}'></paper-slider>
-        <mute-button mute={{_mute}}></mute-button>
+        <mute-button mute={{mute}}></mute-button>
+        <solo-button solo={{solo}}></solo-button>
         <paper-icon-button id='preview' icon="refresh" on-tap='reset'></paper-icon-button>
         <paper-icon-button id='preview' icon="arrow-forward" on-tap='preview'></paper-icon-button>
         <paper-icon-button id='preview' icon="check-box-outline-blank" on-tap='preview'></paper-icon-button>
@@ -76,9 +80,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _reset: Boolean,
       _step: Number, // ZERO BASED //
       _volume: Number,
-      _mute: Boolean,
+      mute: Boolean,
+      _bypassClass: String,
 
       properties: {
+        solo: {
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true,        
+          notify: true,
+          observer: 'updateSolo'
+        },
+        siblingSoloed: {
+          type: Boolean,
+          value: false,
+          observer: 'updateBypass'
+        },
         sound: {
           type: Object
         },
@@ -113,14 +130,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._reset = false;
         this._step = 0;
         this._volume = 80;
-        this._mute = false;
+        this.mute = false;
+        this._bypassClass = false;
       },
       setContext: function(context) {
         this.context = context;
         return this;
       },
+      updateSolo: function() {
+        this.fire('soloChange', {solo: this.solo, track: this.id});
+      },
+      updateBypass: function() {
+        this._bypassClass = (this.siblingSoloed && !this.solo) ? 'bypassed' : '';
+      },
       loadSequence: function(sequence) {
         this.steps = sequence;
+        return this;
       },
       loadSound: function(soundFile) {
         this.sound = this.context.getSoundFile();
@@ -151,7 +176,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this._step = 1;
           this._reset = false;
         }
-        if (this.steps[this._step].value > 0 && !this._mute) {
+        if ((this.steps[this._step].value > 0 && !this.mute) && (!this.siblingSoloed || this.solo)) {
           this.playSound(time, this.getStepVolume());
         }
         this.activateStep();

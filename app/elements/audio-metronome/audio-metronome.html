@@ -30,10 +30,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       </style>
 
-    <paper-button>
+    <!-- <paper-button> -->
       <div id='title'>METRONOME</div>
       <mute-button mute="{{_mute}}"></mute-button>
-    </paper-button> 
+    <!-- </paper-button>   -->
 
     <paper-slider min='0' max='100' value='{{_volume}}' class$="{{_sliderClass}}"></paper-slider>
 
@@ -55,23 +55,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       setContext: function(context) {
         this.context = context;
-        },
+        return this;
+      },
       ready: function() {
         this._count = 4;
         this._volume = 40;
         this._mute = false;
-        // this.$.metronome.set(true);
-        console.log("TRUTH");
       },
       increment: function() {
         this._count += 1;
         if (this._count === 5)
           this._count = 1;
       },
+      mute: function() {
+        this._mute = true;
+        return this;
+      },
       play: function(time) {
         this.increment();
-
-        if (!this._mute || (this._count % 4 !== 1) )
+// 
+        if (this._mute || (this._count % 4 !== 1) )
           return;
 
         this._osc = this.context.getOsc();
