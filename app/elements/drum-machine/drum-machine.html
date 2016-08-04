@@ -16,15 +16,42 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <style>
       :host {
         display: block;
-        background-color: #FFCC66;
+        background-color: #E6E6E6;
         padding: 1em;
       }
+      #title {
+        @apply(--layout-flex-10);
+      }
+      #songs {
+
+      }
+      #controls {
+        @apply(--layout-flex-2);
+        @apply(--layout-horizontal-reverse);
+        @apply(--layout-center);
+        /*background-color: red;*/
+      }
+
     </style>
     
-    <h1>Drum Machine</h1>
-    <div class="layout ">
-      <sequencer-track id='kick'></sequencer-track>
-      <sequencer-track id='snare'></sequencer-track>
+    <div class="layout horizontal center">
+      <h1 id='title'>Drum Machine</h1>
+
+      <div id='songs'>
+        <paper-dropdown-menu label='Select Song'>
+          
+        </paper-dropdown-menu>
+      </div>
+      <div id='controls'>
+        <paper-icon-button id='reset' icon="refresh" on-tap='reset'>Reset Song</paper-icon-button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <sequencer-track id='kick' title='Kick'></sequencer-track>
+      <sequencer-track id='snare' title='Snare'></sequencer-track>
+      <sequencer-track id='hat' title='Hat'></sequencer-track>
+      <sequencer-track id='tom' title='Tom'></sequencer-track>
     </div>
 
   </template>
@@ -67,29 +94,118 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._isPlaying = false;
         this.currentStep = 1;
       },
+      reset: function() {
+          let tracks = this.getTracks();
+          for (var i = 0; i < tracks.length; i++) {
+            tracks[i].reset();
+          }
+      },
 
       setContext: function(context) {
         this.context = context;
 
         // PRELOADING SAMPLES TOO //
+        var kickSequence = 
+          this
+            .getSequence()
+            .setLength(16)
+            .setStep(2,1)
+            .setStep(3,2)
+            .setStep(6,3)
+            .setStep(7,2)
+            .setStep(9,1)
+            .setStep(12,2)
+            .setStep(14,1)
+            .setStep(15,3);
+
+        var snareSequence = 
+          this
+            .getSequence()
+            .setLength(16)
+            .setStep(5,3)
+            .setStep(13,3);
+
+        var hatSequence = 
+          this
+            .getSequence()
+            .setLength(16)
+            .setStep(1,3)
+            .setStep(2,1)
+            .setStep(3,2)
+            .setStep(4,1)
+            .setStep(6,1)
+            .setStep(7,1)
+            .setStep(8,2)
+            .setStep(10,1)
+            .setStep(11,3)
+            .setStep(12,1);
+
         this.$.kick
           .setContext(this.context)
-          .loadSound('samples/E-Mu-Proteus-FX-909-Kick.wav');
+          .loadSound('samples/E-Mu-Proteus-FX-909-Kick.wav')
+          .loadSequence(kickSequence.steps);
 
         this.$.snare
           .setContext(this.context)
-          .loadSound('samples/Hip-Hop-Snare-1.wav');
+          .loadSound('samples/Hip-Hop-Snare-1.wav')
+          .loadSequence(snareSequence.steps);
+
+        this.$.hat
+          .setContext(this.context)
+          .loadSound('samples/Closed-Hi-Hat-1.wav')
+          .loadSequence(hatSequence.steps);
+
+        this.$.tom
+          .setContext(this.context)
+          .loadSound('samples/Electro-Tom.wav')
+          .loadSequence(this.getSequence().setLength(16).steps);
       },
       moveForward: function(time) {
-          let tracks = document.querySelectorAll('sequencer-track');
-
+          let tracks = this.getTracks();
           for (var i = 0; i < tracks.length; i++) {
-            tracks[i].playStep(this.currentStep, time);
+            tracks[i].playNextStep(time);
           }
           
           this.currentStep++;
           if (this.currentStep > this.maxSteps)
             this.currentStep = 1;
+      },
+      getTracks: function() {
+        return document.querySelectorAll('sequencer-track');
+      },
+
+      getSequence: function() {
+        var seq = {
+          steps: [],
+
+          getLength: function() { 
+            return this.steps.length; 
+          },
+          setLength: function(len) {
+            for(var i = 0; i < len; i++) {
+              this.steps.push({'value': 0}); 
+            }
+            return this;
+          },
+          setStep: function(step, value) { // ONE BASED //
+            if (step < 1 || step > this.getLength())
+              throw Error('Tried to set step outside of current length: ', step, this.length());
+            if (!value)
+              value = 0;
+
+            this.steps[step-1].value = (value % 4); // 0-3 //
+
+            return this;
+          },
+          clearSteps: function() {
+            while(this.steps.length) {
+              this.steps.pop();
+            }
+            return this;
+          }
+        };
+
+        return seq;
       }
     });
   })();

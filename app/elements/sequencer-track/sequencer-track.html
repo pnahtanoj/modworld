@@ -17,18 +17,51 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       :host {
         display: block;
       }
-      #previewBtn {
-        background-color: #CCFF66;
-        width: 10px;
+      #container {
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+        background-color: #FFFFFF;
+        padding: 0.4em;
+        margin: 1em;
       }
+      #title {
+        font-size: 1.4em;
+        @apply(--layout-flex-2);
+        /*background-color: red;*/
+      }
+      #steps {
+        @apply(--layout-flex-10);
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+        /*background-color: blue;*/
+      }
+      #controls {
+        @apply(--layout-flex-2);
+        /*background-color: green;*/
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+      }
+
     </style>
 
-    <div class="layout horizontal">
-      <template is='dom-repeat' items="{{steps}}">
-        <sequencer-track-step state='{{item.value}}'></sequencer-track-step>
-      </template>
+    <div id="container">
 
-      <paper-icon-button icon="favorite" on-tap='preview'></paper-icon-button>      
+      <div id='title'>{{title}}</div>
+
+      <div id='steps'>
+        <template is='dom-repeat' items="{{steps}}">
+          <sequencer-track-step state='{{item.value}}'></sequencer-track-step>
+        </template>
+      </div>
+
+      <div id='controls'>
+        <paper-slider min='0' max='100' value='{{_volume}}'></paper-slider>
+        <mute-button mute={{_mute}}></mute-button>
+        <paper-icon-button id='preview' icon="refresh" on-tap='reset'></paper-icon-button>
+        <paper-icon-button id='preview' icon="arrow-forward" on-tap='preview'></paper-icon-button>
+        <paper-icon-button id='preview' icon="check-box-outline-blank" on-tap='preview'></paper-icon-button>
+      </div>
+
     </div>
 
   </template>
@@ -40,6 +73,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     Polymer({
       is: 'sequencer-track',
+      _reset: Boolean,
+      _step: Number, // ZERO BASED //
+      _volume: Number,
+      _mute: Boolean,
 
       properties: {
         sound: {
@@ -73,26 +110,72 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       ready: function() {
-        // context = this.getAudioContext();
+        this._reset = false;
+        this._step = 0;
+        this._volume = 80;
+        this._mute = false;
       },
       setContext: function(context) {
         this.context = context;
         return this;
       },
+      loadSequence: function(sequence) {
+        this.steps = sequence;
+      },
       loadSound: function(soundFile) {
-        this.sound = this.context.loadSoundFile(soundFile);
+        this.sound = this.context.getSoundFile();
+        this.sound.loadSound(soundFile);
+        return this;
       },
       preview: function() {
-        this.playSound();
+        this.playSound(null, this.getVolume());
       },
-      playSound: function(time) {
+      getVolume: function() {
+        return (this._volume / 100);
+      },
+      getStepVolume: function() {
+        return this.getVolume() * this.getStepReductionFactor();
+      },
+      getStepReductionFactor: function() {
+        var value = 0.6; // 1
+        value += (this.steps[this._step].value - 1) * 0.2;
+
+        return value;
+      },
+      playSound: function(time, volume) {
+        this.sound.volume = volume;
         this.sound.play(time);
       },
-      playStep: function(step, time) {
-        if (this.steps[step-1].value > 0)
-          this.playSound(time)
-      }
+      playNextStep(time) {
+        if (this._reset) {
+          this._step = 1;
+          this._reset = false;
+        }
+        if (this.steps[this._step].value > 0 && !this._mute) {
+          this.playSound(time, this.getStepVolume());
+        }
+        this.activateStep();
 
+        this.increment();
+      },
+      increment: function() {
+        this._step += 1;
+        if (this._step >= 16)
+          this._step = 0;
+      },
+      reset: function() {
+        this._reset = true;
+      },
+      activateStep: function() {
+        var steps = Polymer.dom(this.root).querySelectorAll('sequencer-track-step');
+
+        for(var i = 0; i < this.steps.length; i++) {
+          if (i == this._step)
+            steps[i].setActive(true);
+          else
+            steps[i].setActive(false);
+        }
+      }
     });
   })();
   </script>

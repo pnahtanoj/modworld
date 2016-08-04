@@ -10,7 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
-<dom-module id="rack-workspace">
+<dom-module id="mute-button">
   <template>
     <style>
       :host {
@@ -18,34 +18,47 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
     </style>
 
-    <audio-api id='audioContext'></audio-api>
-    
-    <audio-clock id='masterClock'></audio-clock>
-    
-    <drum-machine id='drums1'></drum-machine>
-
+    <paper-icon-button icon='{{_muteIcon}}' on-tap='toggleMute'></paper-icon-button>
   </template>
   <script>
   (function() {
     'use strict';
 
     Polymer({
-      is: 'rack-workspace',
+      is: 'mute-button',
+      _muteIcon: String,
 
       properties: {
-        foo: {
-          type: String,
-          value: 'rack-workspace',
+        mute: {
+          type: Boolean,
+          value: false,
           notify: true
         }
+
       },
       ready: function() {
-        this.$.masterClock.setContext(this.$.audioContext);
-        this.$.drums1.setContext(this.$.audioContext);
+        this.set(false);
+      },
+      set: function(mute) {
+        this.mute = mute;
+        this.setMuteIcon();
+        console.log(this.mute)
+                
+      },
+      toggleMute: function() {
+        if (this.mute === true)
+          this.set(false);
+        else
+          this.set(true);
+        // this.mute = (this.mute === true) ? false : true;
+        // this.setMuteIcon();
 
-        this.$.masterClock.register( this.$.drums1.moveForward.bind(this.$.drums1) );
-
-      }
+        // console.log(this.mute)
+        return this;
+      },
+      setMuteIcon: function() {
+        this._muteIcon = (this.mute == '') ? 'social:notifications-active' : 'social:notifications-off';
+      }      
     });
   })();
   </script>

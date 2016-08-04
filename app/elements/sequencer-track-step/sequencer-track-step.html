@@ -17,28 +17,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         display: block;
       }
       .off {
-        background-color: #eeeeee;
+        background-color: #E6E6E6;
       }
       .soft {
-        background-color: yellow;
+        background-color: #FFFF00;
       }
       .medium {
-        background-color: orange;
+        background-color: #FFCC66;
       }
       .hard {
-        background-color: red;
+        background-color: #FF6666;
       }
       .step {
         padding: 1em;
         margin: 0.5em;
-        border: 1px solid #aaaaaa;
+        border: 2px solid #CCCCCC;
       }
       .step:focus {
         outline: 0;
       }
-
+      .active {
+        border: 2px solid red;
+        opacity: 0.5;
+      }
+      .inactive {
+        /*border: 2px solid grey;        */
+      }
     </style>
-    <button on-tap='increment' class$="{{stateClass}} step"></button>
+
+    <button on-tap='increment' class$="{{stateClass}} {{active}} step"></button>
   </template>
   
   <script>
@@ -76,6 +83,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.stateClass = 'medium';
         if (this.state == 3)
           this.stateClass = 'hard';
+      },
+      setActive: function(active) {
+        this.active = (active === true) ? 'active' : 'inactive';
       }
 
     });

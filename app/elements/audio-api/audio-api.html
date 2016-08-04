@@ -31,10 +31,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       },
       ready: function() {
-        this.context = this.getContext();
+        this.context = this.setContext();
       },
 
-      getContext: function() {
+      setContext: function() {
         if (typeof AudioContext !== 'undefined')
           return new AudioContext();
         if (typeof webkitAudioContext !== 'undefined')
@@ -44,10 +44,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         throw new Error('No Audio Context: This will not go well');
       },
+      getContext: function() {
+        return this.context;
+      },
+      getOsc: function() {
+        return this.context.createOscillator();
+      },
+      getGain: function() {
+        return this.context.createGain();
+      },
 
       loadSoundFile: function(soundLink) {
         // console.log('loading sound file: ', soundLink);
-        var audioFile = {};
+        var audioFile = {
+          volume: 1
+        };
         var getSound = new XMLHttpRequest();
 
         getSound.open("GET", soundLink, true);
@@ -62,12 +73,55 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // this.getSound(soundLink, audioFile.buffer);
         audioFile.play = function(time) {
           var playSound = this.context.createBufferSource();
+          var gain = this.context.createGain();
+          gain.gain.value = volume;
+
           playSound.buffer = audioFile.buffer;
-          playSound.connect(this.context.destination);
+          playSound.connect(gain);
+          gain.connect(this.context.destination);
           playSound.start(time || this.context.currentTime);
         }.bind(this);
 
         return audioFile;
+      },
+
+      getSoundFile: function() {
+        var sf = {
+          volume: 1,
+          context: {},
+
+          setContext: function(context) {
+            this.context = context;
+          },
+          loadSound: function(sound) {
+            var getSound = new XMLHttpRequest();
+
+            getSound.open("GET", sound, true);
+            getSound.responseType = "arraybuffer";
+            getSound.onload = function() {
+              var self = this;
+              this.context.decodeAudioData(getSound.response, function(buffer) {
+                self.buffer = buffer;
+              });
+            }.bind(this);
+            getSound.send();
+          },
+
+          play: function(time) {
+            var playSound = this.context.createBufferSource();
+            var gain = this.context.createGain();
+            gain.gain.value = this.volume;
+
+            playSound.buffer = this.buffer;
+            playSound.connect(gain);
+            gain.connect(this.context.destination);
+            playSound.start(time || this.context.currentTime);
+          }
+        }
+
+        sf.setContext(this.context);
+
+        return sf;
       },
 
       getCurrentTime: function() {

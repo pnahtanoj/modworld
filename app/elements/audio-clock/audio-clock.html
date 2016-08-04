@@ -35,6 +35,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <p id='tempo'>Tempo: {{tempo}}</p>
       <paper-slider min="10" max="220" value={{tempo}}></paper-slider>
 
+      <audio-metronome id='metronome' class='layout horizontal center'></audio-metronome>
+
       <div class='flex'></div>
   
       <div class="layout horizontal">
@@ -61,8 +63,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           notify: true
         }
       },
+      ready: function() {
+        this.register( this.$.metronome.play.bind(this.$.metronome) );
+      },
       setContext: function(context) {
         this.context = context;
+
+        this.$.metronome.setContext(this.context);
+
         return this;
       },
       startToggle: function() {
