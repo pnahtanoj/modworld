@@ -144,7 +144,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._bypassClass = (this.siblingSoloed && !this.solo) ? 'bypassed' : '';
       },
       loadSequence: function(sequence) {
-        this.steps = sequence;
+        this.steps = sequence.steps;
         return this;
       },
       loadSound: function(soundFile) {

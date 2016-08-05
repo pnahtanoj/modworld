@@ -68,30 +68,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         'contextReady(context.ready)'
       ],
 
-      setContext: function(context) {
-        this.context = context;
-        return this;
-      },
       ready: function() {
         this._count = 4;
         this._volume = 40;
         this._mute = false;
       },
       clockReady: function() {
-        var input = {
-          'id': 'metronome:master',
-          'cb': this.play.bind(this)
-        };
-
+        var input = new Input('metronome:master',this.play.bind(this));
         this.clock.connect('1:1', input);
       },
       contextReady: function() {
-        // var input = {
-        //   'id': 'metronome:master',
-        //   'cb': this.play.bind(this)
-        // };
-
-        // this.clock.connect('1:1', input);
       },
       increment: function() {
         this._count += 1;
@@ -104,7 +90,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       play: function(time) {
         this.increment();
-        
+
         if (this._mute)
           return;
 

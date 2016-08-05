@@ -57,7 +57,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _callbacks: [],
       callbacks: {},
       properties: {
-        clock: {
+        context: {
           type: Object,
           notify: true
         },
@@ -79,6 +79,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           value: 1
         },
       },
+
+      // observers: [
+      //   'clockReady(clock.ready)',
+      //   'contextReady(context.ready)'
+      // ],
+
       ready: function() {
         // Initialize callback arrays //
         for(var i = 0; i < this.availableRates.length; i++) {
@@ -86,15 +92,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       },
 
-      setContext: function(context) {
-        this.context = context;
+      // setContext: function(context) {
+      //   this.context = context;
 
-        // this.$.metronome
-        //   .setContext(this.context)
-        //   .mute();
+      //   // this.$.metronome
+      //   //   .setContext(this.context)
+      //   //   .mute();
 
-        return this;
-      },
+      //   return this;
+      // },
       startToggle: function() {
         if (this._isPlaying) {
           this.stop();
@@ -112,9 +118,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       stop: function() {
         this._isPlaying = false;
         this._updateButton();
-      },
-      register: function(cb) {
-        this._callbacks.push(cb);
       },
       connect: function(rate, input) {
         if (!this.callbacks[rate]) {
@@ -157,10 +160,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         while(this.futureTickTime < this.context.getCurrentTime() + 0.1) {
           _.forEach(this._findRates(), (rate) => {
             _.forEach(this.callbacks[rate], (input) => {
+              // console.log('PLAY: ', this.futureTickTime, input);
               input.cb(this.futureTickTime);
             })
           })
-
           this._incrementClock();
         }
 
@@ -173,7 +176,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             this.currentStep = 1;
       },
       _timeSliceLength: function() {
-        return (60/this.tempo) * 0.25;
+        return (60/this.tempo) * 0.25; // 16ths
       },
       _updateButton: function() {
         if (this._isPlaying)

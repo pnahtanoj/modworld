@@ -21,12 +21,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <audio-api id='audioContext'></audio-api>
 
-    <div class='layout horizontal center'>
-      <audio-clock class='flex' id='masterClock' clock='{{master}}'></audio-clock>
+    <div class='layout horizontal center row'>
+      <audio-clock class='flex' id='masterClock' context='{{context}}'></audio-clock>
       <audio-metronome id='metronome' clock='{{master}}' context='{{context}}'></audio-metronome>
     </div>
     
-    <drum-machine id='drums1' clock='{{master}}'></drum-machine>
+    <div class='row'>
+    <drum-machine id='drums1' clock='{{master}}' context='{{context}}'></drum-machine>
+    </div>
+
+    <div class='row'>
+    <drum-machine id='drums2' clock='{{master}}' context='{{context}}'></drum-machine>
+    </div>
     <!-- <drum-machine id='drums2'></drum-machine> -->
 
   </template>
@@ -58,11 +64,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this.master.ready = true;
         this.context = this.$.audioContext;
         this.context.ready = true;
-        
-        this.master.setContext(this.$.audioContext);
-        this.$.drums1.setContext(this.$.audioContext);
-        // this.$.drums2.setContext(this.$.audioContext);
-
       }
     });
   })();
