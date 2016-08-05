@@ -12,6 +12,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="rack-workspace">
   <template>
+    <style include="iron-flex iron-flex-alignment"></style>
     <style>
       :host {
         display: block;
@@ -19,10 +20,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     </style>
 
     <audio-api id='audioContext'></audio-api>
+
+    <div class='layout horizontal center'>
+      <audio-clock class='flex' id='masterClock' clock='{{master}}'></audio-clock>
+      <audio-metronome id='metronome' clock='{{master}}' context='{{context}}'></audio-metronome>
+    </div>
     
-    <audio-clock id='masterClock'></audio-clock>
-    
-    <drum-machine id='drums1'></drum-machine>
+    <drum-machine id='drums1' clock='{{master}}'></drum-machine>
     <!-- <drum-machine id='drums2'></drum-machine> -->
 
   </template>
@@ -38,15 +42,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: String,
           value: 'rack-workspace',
           notify: true
+        },
+        master: {
+          type: Object,
+          notify: true
+        },
+        context: {
+          type: Object,
+          notify: true
         }
       },
+
       ready: function() {
-        this.$.masterClock.setContext(this.$.audioContext);
+        this.master = this.$.masterClock;
+        this.master.ready = true;
+        this.context = this.$.audioContext;
+        this.context.ready = true;
+        
+        this.master.setContext(this.$.audioContext);
         this.$.drums1.setContext(this.$.audioContext);
         // this.$.drums2.setContext(this.$.audioContext);
-
-        this.$.masterClock.register( this.$.drums1.moveForward.bind(this.$.drums1) );
-        // this.$.masterClock.register( this.$.drums2.moveForward.bind(this.$.drums2) );
 
       }
     });

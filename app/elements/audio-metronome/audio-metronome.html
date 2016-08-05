@@ -12,12 +12,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <dom-module id="audio-metronome">
   <template>
+    <style include="iron-flex iron-flex-alignment"></style>
     <style>
       :host {
         display: block;
-      }
-      #title {
-        margin: 0.5em;
+        padding: 1em;
       }
       .sliderOff {
         --paper-slider-knob-color: grey;
@@ -30,12 +29,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       </style>
 
-    <!-- <paper-button> -->
-      <div id='title'>METRONOME</div>
-      <mute-button mute="{{_mute}}"></mute-button>
-    <!-- </paper-button>   -->
+      <div class="layout vertical">
+      <h1>Metronome</h1>
 
-    <paper-slider min='0' max='100' value='{{_volume}}' class$="{{_sliderClass}}"></paper-slider>
+      <div class="layout horizontal">
+        <mute-button mute="{{_mute}}"></mute-button>
+        <paper-slider min='0' max='100' value='{{_volume}}' class$="{{_sliderClass}}"></paper-slider>
+      </div>
+      </div>
 
   </template>
   <script>
@@ -52,7 +53,21 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _sliderClass: '',
 
       properties: {
+        clock: {
+          type: Object,
+          notify: true
+        },
+        context: {
+          type: Object,
+          notify: true          
+        }
       },
+
+      observers: [
+        'clockReady(clock.ready)',
+        'contextReady(context.ready)'
+      ],
+
       setContext: function(context) {
         this.context = context;
         return this;
@@ -61,6 +76,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._count = 4;
         this._volume = 40;
         this._mute = false;
+      },
+      clockReady: function() {
+        var input = {
+          'id': 'metronome:master',
+          'cb': this.play.bind(this)
+        };
+
+        this.clock.connect('1:1', input);
+      },
+      contextReady: function() {
+        // var input = {
+        //   'id': 'metronome:master',
+        //   'cb': this.play.bind(this)
+        // };
+
+        // this.clock.connect('1:1', input);
       },
       increment: function() {
         this._count += 1;
@@ -73,8 +104,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       play: function(time) {
         this.increment();
-// 
-        if (this._mute || (this._count % 4 !== 1) )
+        
+        if (this._mute)
           return;
 
         this._osc = this.context.getOsc();

@@ -35,7 +35,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <p id='tempo'>Tempo: {{tempo}}</p>
       <paper-slider min="10" max="220" value={{tempo}}></paper-slider>
 
-      <audio-metronome id='metronome' class='layout horizontal center'></audio-metronome>
+      <!-- <audio-metronome id='metronome' class='layout horizontal center'></audio-metronome> -->
 
       <div class='flex'></div>
   
@@ -55,23 +55,43 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       // privates //
       _isPlaying: false,
       _callbacks: [],
-
+      callbacks: {},
       properties: {
+        clock: {
+          type: Object,
+          notify: true
+        },
+        ready: {
+          type: Boolean,
+          value: false
+        },
         tempo: {
           type: Number,
           value: 120,
           notify: true
-        }
+        },
+        availableRates: {
+          type: Array,
+          value: ['4:1','2:1','1:1','1:2','1:4']
+        },
+        currentStep: {
+          type: Number,
+          value: 1
+        },
       },
       ready: function() {
-        this.register( this.$.metronome.play.bind(this.$.metronome) );
+        // Initialize callback arrays //
+        for(var i = 0; i < this.availableRates.length; i++) {
+          this.callbacks[this.availableRates[i]] = [];
+        }
       },
+
       setContext: function(context) {
         this.context = context;
 
-        this.$.metronome
-          .setContext(this.context)
-          .mute();
+        // this.$.metronome
+        //   .setContext(this.context)
+        //   .mute();
 
         return this;
       },
@@ -95,7 +115,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
       register: function(cb) {
         this._callbacks.push(cb);
-        console.log('registered: ', cb);
+      },
+      connect: function(rate, input) {
+        if (!this.callbacks[rate]) {
+          return;
+        }
+        this.disconnect(input);
+        this.callbacks[rate].push(input);
+
+        console.log('connected: ', input);
+        console.log('post connect: ', this.callbacks);
+
+      },
+      disconnect: function(input) {
+        _.forEach(this.availableRates, (rate) => {
+          _.remove(this.callbacks[rate], (i) => {
+            return input.id === i.id;
+          });
+        });
+        console.log('post disconnect: ', this.callbacks);
+      },
+      _findRates() {
+        var currentActiveRates = ['1:4']; // every tick, since we're maxing at 16ths for now //
+        if (this.currentStep % 2 === 1) // EIGHTH //
+          currentActiveRates.push('1:2');
+        if (this.currentStep % 4 === 1) // QUARTER //
+          currentActiveRates.push('1:1');
+        if (this.currentStep % 8 === 1) // HALF //
+          currentActiveRates.push('2:1');
+        if (this.currentStep % 16 === 1) // WHOLE //
+          currentActiveRates.push('4:1');
+
+        return currentActiveRates;
       },
       _playLoop: function() {
         var t;
@@ -104,9 +155,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           return;
 
         while(this.futureTickTime < this.context.getCurrentTime() + 0.1) {
-          for (var i = 0; i < this._callbacks.length; i++) {
-            this._callbacks[i](this.futureTickTime);
-          }
+          _.forEach(this._findRates(), (rate) => {
+            _.forEach(this.callbacks[rate], (input) => {
+              input.cb(this.futureTickTime);
+            })
+          })
 
           this._incrementClock();
         }
@@ -116,7 +169,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _incrementClock: function() {
           this.futureTickTime += this._timeSliceLength(); // 120 bpm;
           this.currentStep++;
-          if (this.currentStep > this.maxSteps)
+          if (this.currentStep > 48) // Weird //
             this.currentStep = 1;
       },
       _timeSliceLength: function() {

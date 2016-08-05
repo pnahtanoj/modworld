@@ -38,6 +38,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <h1 id='title'>Drum Machine</h1>
 
       <div id='songs'>
+        <div>
+          <paper-dropdown-menu label="Clock Options">
+            <paper-menu class="dropdown-content" selected="{{clockSetting}}">
+              <template is='dom-repeat' items="{{clock.availableRates}}">
+                <paper-item>{{item}}</paper-item>
+              </template>
+            </paper-menu>
+          </paper-dropdown-menu>
+        </div>
         <paper-dropdown-menu label='Select Song'>
           
         </paper-dropdown-menu>
@@ -54,6 +63,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       <sequencer-track id='tom' title='Tom' sibling-soloed='{{_trackIsSoloed}}'></sequencer-track>
     </div>
 
+    ME: {{clockSetting}}
+
   </template>
   <script>
   (function() {
@@ -69,10 +80,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: Object,
           notify: true
         },
-        tempo: {
-          type: Number,
-          value: 120,
+        clock: {
+          type: Object,
           notify: true
+        },
+        clockSetting: {
+          type: String,
+          observer: 'updateClockSelection'
         },
         currentStep: {
           type: Number,
@@ -116,7 +130,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           }
         }
       },
+      updateClockSelection: function() {
+        var input = {
+          'id': 'drum-machine:master',
+          'cb': this.moveForward.bind(this)
+        };
 
+        this.clock.connect(this.clock.availableRates[this.clockSetting], input);
+        // this.clock.connect(this.clock.availableRates[this.clockSetting], this.moveForward.bind(this));
+      },
       setContext: function(context) {
         this.context = context;
 
@@ -177,6 +199,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           .loadSequence(this.getSequence().setLength(16).steps);
       },
       moveForward: function(time) {
+        // console.log('move: ', time);
           let tracks = this.getTracks();
           for (var i = 0; i < tracks.length; i++) {
             tracks[i].playNextStep(time);
