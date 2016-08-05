@@ -80,27 +80,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
       },
 
-      // observers: [
-      //   'clockReady(clock.ready)',
-      //   'contextReady(context.ready)'
-      // ],
-
       ready: function() {
         // Initialize callback arrays //
         for(var i = 0; i < this.availableRates.length; i++) {
           this.callbacks[this.availableRates[i]] = [];
         }
       },
-
-      // setContext: function(context) {
-      //   this.context = context;
-
-      //   // this.$.metronome
-      //   //   .setContext(this.context)
-      //   //   .mute();
-
-      //   return this;
-      // },
       startToggle: function() {
         if (this._isPlaying) {
           this.stop();
