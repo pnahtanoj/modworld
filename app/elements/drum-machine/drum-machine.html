@@ -9,201 +9,229 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../behaviors/requester.html">
 
 <dom-module id="drum-machine">
-  <template>
-    <style include="iron-flex iron-flex-alignment"></style>
-    <style>
-      :host {
-        display: block;
-        background-color: #E6E6E6;
-        padding: 1em;
+	<template>
+		<style include="iron-flex iron-flex-alignment"></style>
+		<style>
+			:host {
+				display: block;
+				background-color: #E6E6E6;
+				padding: 1em;
 
-      }
-      #title {
-        @apply(--layout-flex-10);
-      }
-      #songs {
+			}
+			#title {
+				@apply(--layout-flex-10);
+			}
+			#songs {
 
-      }
-      #controls {
-        @apply(--layout-flex-2);
-        @apply(--layout-horizontal-reverse);
-        @apply(--layout-center);
-        /*background-color: red;*/
-      }
+			}
+			#controls {
+				@apply(--layout-flex-2);
+				@apply(--layout-horizontal-reverse);
+				@apply(--layout-center);
+				/*background-color: red;*/
+			}
 
-    </style>
-    
-    <div class="layout horizontal center">
-      <h1 id='title'>Drum Machine</h1>
+		</style>
+		
+		<div class="layout horizontal center">
+			<h1 id='title'>Drum Machine</h1>
 
-      <paper-dropdown-menu label="Clock Options">
-        <paper-menu class="dropdown-content" selected="{{clockSetting}}">
-          <template is='dom-repeat' items="{{clock.availableRates}}">
-            <paper-item>{{item}}</paper-item>
-          </template>
-        </paper-menu>
-      </paper-dropdown-menu>
+			<paper-dropdown-menu label="Clock Options">
+				<paper-menu class="dropdown-content" selected="{{clockSetting}}">
+					<template is='dom-repeat' items="{{clock.availableRates}}">
+						<paper-item value="{{item}}">{{item}}</paper-item>
+					</template>
+				</paper-menu>
+			</paper-dropdown-menu>
 
-      <paper-dropdown-menu label='Select Song'>          
-      </paper-dropdown-menu>
-      
-      <div id='controls'>
-        <paper-icon-button id='reset' icon="refresh" on-tap='reset'>Reset Song</paper-icon-button>
-      </div>
-    </div>
+<!-- 
+			<paper-dropdown-menu label='Select Song'>          
+			</paper-dropdown-menu>
+ -->      
+			<div id='controls'>
+				<paper-icon-button id='reset' icon="refresh" on-tap='reset'>Reset Song</paper-icon-button>
+			</div>
+		</div>
 
-    <div class="layout">
-      <sequencer-track id='kick' title='Kick' sibling-soloed='{{_trackIsSoloed}}'></sequencer-track>
-      <sequencer-track id='snare' title='Snare' sibling-soloed='{{_trackIsSoloed}}'></sequencer-track>
-      <sequencer-track id='hat' title='Hat' sibling-soloed='{{_trackIsSoloed}}'></sequencer-track>
-      <sequencer-track id='tom' title='Tom' sibling-soloed='{{_trackIsSoloed}}'></sequencer-track>
-    </div>
+		<div class="layout">
+			<sequencer-track-group id='group'>
+				<sequencer-track id='kick' title='Kick'></sequencer-track>
+				<sequencer-track id='snare' title='Snare'></sequencer-track>
+				<sequencer-track id='hat' title='Hat'></sequencer-track>
+				<sequencer-track id='tom' title='Tom'></sequencer-track>
+			</sequencer-track-group>
+		</div>
 
-    ME: {{clockSetting}}
+	</template>
+	<script>
+	(function() {
+		'use strict';
 
-  </template>
-  <script>
-  (function() {
-    'use strict';
+		Polymer({
+			is: 'drum-machine',
+			_isPlaying: false,
+			// _trackIsSoloed: Boolean,
 
-    Polymer({
-      is: 'drum-machine',
-      _isPlaying: false,
-      _trackIsSoloed: Boolean,
+			properties: {
+				clock: {
+					type: Object,
+					notify: true
+				},
+				audio: {
+					type: Object,
+					notify: true
+				},
+				input: {
+					type: Object,
+					notify: true
+				},
+				clockSetting: {
+					type: Number,
+					notify: true,
+					observer: 'updateClockSelection'
+				},
+				currentStep: {
+					type: Number,
+					value: 1
+				},
+				maxSteps: {
+					type: Number,
+					value: 16
+				}
+			},
 
-      properties: {
-        clock: {
-          type: Object,
-          notify: true
-        },
-        context: {
-          type: Object,
-          notify: true
-        },
-        clockSetting: {
-          type: String,
-          observer: 'updateClockSelection'
-        },
-        currentStep: {
-          type: Number,
-          value: 1
-        },
-        maxSteps: {
-          type: Number,
-          value: 16
-        }
-      },
-      listeners: {
-        'soloChange': 'updateSolos'
-      },
-      observers: [
-        'contextReady(context.ready)'
-      ],
-      ready: function() {
-        this._trackIsSoloed = false;
-      },
-      play: function() {
-        this._isPlaying = true;
-        this.futureTickTime = this.$.audioContext.getCurrentTime();
+			behaviors: [Polymer.RequesterBehavior],
 
-        this._playLoop();
-      },
-      stop: function() {
-        this._isPlaying = false;
-        this.currentStep = 1;
-      },
-      reset: function() {
-          let tracks = this.getTracks();
-          for (var i = 0; i < tracks.length; i++) {
-            tracks[i].reset();
-          }
-      },
-      updateSolos: function(event) {
-        this._trackIsSoloed = false;
+			attached: function() {
+				this._loadDependencies();
 
-        let tracks = this.getTracks();
-        for (var i = 0; i < tracks.length; i++) {
-          if (tracks[i].solo) {
-            this._trackIsSoloed = true;
-          }
-        }
-      },
-      updateClockSelection: function() {
-        var myId = `${this.id}:drum-machine:master`,
-            input = new Input(myId,this.moveForward.bind(this));
-        this.clock.connect(this.clock.availableRates[this.clockSetting], input);
-      },
-      contextReady: function(context) {
-        // PRELOADING SAMPLES TOO //
-        var kickSequence = 
-          new Sequence()
-            .setLength(16)
-            .setStep(2,1)
-            .setStep(3,2)
-            .setStep(6,3)
-            .setStep(7,2)
-            .setStep(9,1)
-            .setStep(12,2)
-            .setStep(14,1)
-            .setStep(15,3);
+				this.input = new Input();
+				this.input.setId(`drum-machine:master:${this.id}`);
+				this.input.setCallback(this.moveForward.bind(this));
 
-        var snareSequence = 
-          new Sequence()
-            .setLength(16)
-            .setStep(5,3)
-            .setStep(13,3);
+				this.clockSetting = this._getDefaultClock();
+			},
+			_getDefaultClock: function() {
+				return this.clock.availableRates.length-1;
+			},
+			_loadDependencies: function() {
+				// AUDIO API REQUIRED FOR SOUND //
+				try {
+					this.audio = this.requestInstance('audio-api');
+				}
+				catch(e) {
+					throw e;
+				}
 
-        var hatSequence = 
-          new Sequence()
-            .setLength(16)
-            .setStep(1,3)
-            .setStep(2,1)
-            .setStep(3,2)
-            .setStep(4,1)
-            .setStep(6,1)
-            .setStep(7,1)
-            .setStep(8,2)
-            .setStep(10,1)
-            .setStep(11,3)
-            .setStep(12,1);
+				// AUDIO API REQUIRED FOR TIMING //
+				try {
+					this.clock = this.requestInstance('audio-clock');          
+				}
+				catch(e) {
+					throw e;
+				}
 
-        this.$.kick
-          .setContext(this.context)
-          .loadSound('samples/E-Mu-Proteus-FX-909-Kick.wav')
-          .loadSequence(kickSequence);
+				this.loadTracks();
+				console.log(this.$.group.getTracks());
+			},
 
-        this.$.snare
-          .setContext(this.context)
-          .loadSound('samples/Hip-Hop-Snare-1.wav')
-          .loadSequence(snareSequence);
+			play: function() {
+				this._isPlaying = true;
+				this.futureTickTime = this.$.audioContext.getCurrentTime();
 
-        this.$.hat
-          .setContext(this.context)
-          .loadSound('samples/Closed-Hi-Hat-1.wav')
-          .loadSequence(hatSequence);
+				this._playLoop();
+			},
+			stop: function() {
+				this._isPlaying = false;
+				this.currentStep = 1;
+			},
+			reset: function() {
+				let tracks = this.getTracks();
+				for (var i = 0; i < tracks.length; i++) {
+					tracks[i].reset();
+				}
+			},
+			updateClockSelection: function() {
+				this.clock.connect(this.clock.availableRates[this.clockSetting], this.input);
+			},
 
-        this.$.tom
-          .setContext(this.context)
-          .loadSound('samples/Electro-Tom.wav')
-          .loadSequence(new Sequence().setLength(16));
-      },
-      moveForward: function(time) {
-          // console.log('DRM move: ', this.id, time);
-          let tracks = this.getTracks();
-          for (var i = 0; i < tracks.length; i++) {
-            tracks[i].playNextStep(time);
-          }
-          
-          this.currentStep++;
-          if (this.currentStep > this.maxSteps)
-            this.currentStep = 1;
-      },
-      getTracks: function() {
-        return Polymer.dom(this.root).querySelectorAll('sequencer-track');
-      }
-    });
-  })();
-  </script>
+			moveForward: function(time) {
+				let tracks = this.getTracks();
+				for (var i = 0; i < tracks.length; i++) {
+					tracks[i].playNextStep(time);
+				}
+				
+				this.currentStep++;
+				if (this.currentStep > this.maxSteps)
+					this.currentStep = 1;
+			},
+
+			getTracks: function() {
+				return this.$.group.getTracks(); // COULD EXTEND THIS FOR MULTIPLE GROUPS //
+			},
+
+			// SHOULD COME FROM SOME KIND OF SONG LOADER - IN THE FUTURE //
+			loadTracks: function(context) {
+				console.log(this.getKickTrack());
+				this.$.kick
+					.setContext(this.audio)
+					.loadSound('samples/E-Mu-Proteus-FX-909-Kick.wav')
+					.loadSequence(this.getKickTrack());
+
+				this.$.snare
+					.setContext(this.audio)
+					.loadSound('samples/Hip-Hop-Snare-1.wav')
+					.loadSequence(this.getSnareTrack());
+
+				this.$.hat
+					.setContext(this.audio)
+					.loadSound('samples/Closed-Hi-Hat-1.wav')
+					.loadSequence(this.getHatTrack());
+
+				this.$.tom
+					.setContext(this.audio)
+					.loadSound('samples/Electro-Tom.wav')
+					.loadSequence(new Sequence().setLength(16));
+			},
+
+			getKickTrack: function() {
+				// PRELOADING SAMPLES TOO //
+				return new Sequence()
+					.setLength(16)
+					.setStep(2,1)
+					.setStep(3,2)
+					.setStep(6,3)
+					.setStep(7,2)
+					.setStep(9,1)
+					.setStep(12,2)
+					.setStep(14,1)
+					.setStep(15,3);
+			},
+			getSnareTrack: function() {
+				return new Sequence()
+					.setLength(16)
+					.setStep(5,3)
+					.setStep(13,3);
+			},
+			getHatTrack: function() {
+				return new Sequence()
+					.setLength(16)
+					.setStep(1,3)
+					.setStep(2,1)
+					.setStep(3,2)
+					.setStep(4,1)
+					.setStep(6,1)
+					.setStep(7,1)
+					.setStep(8,2)
+					.setStep(10,1)
+					.setStep(11,3)
+					.setStep(12,1);
+			},
+
+		});
+	})();
+	</script>
 </dom-module>

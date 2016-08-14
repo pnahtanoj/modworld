@@ -9,199 +9,194 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../behaviors/requester.html">
 
 <dom-module id="sequencer-track">
-  <template>
-    <style include="iron-flex iron-flex-alignment">
-    <style>
-      :host {
-        display: block;
-      }
-      #container {
-        @apply(--layout-horizontal);
-        @apply(--layout-center);
-        background-color: #FFFFFF;
-        padding: 0.4em;
-        margin: 1em;
-      }
-      #title {
-        font-size: 1.4em;
-        @apply(--layout-flex-2);
-        /*background-color: red;*/
-      }
-      #steps {
-        @apply(--layout-flex-10);
-        @apply(--layout-horizontal);
-        @apply(--layout-center);
-        /*background-color: blue;*/
-      }
-      #controls {
-        @apply(--layout-flex-2);
-        /*background-color: green;*/
-        @apply(--layout-horizontal);
-        @apply(--layout-center);
-      }
-      .bypassed {
-        opacity: 0.4;
-        /*background-color: red !important;*/
-      }
+	<template>
+		<style include="iron-flex iron-flex-alignment">
+		<style>
+			:host {
+				display: block;
+			}
+			#container {
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+				background-color: #FFFFFF;
+				padding: 0.4em;
+				margin: 1em;
+			}
+			#title {
+				font-size: 1.4em;
+				@apply(--layout-flex-2);
+			}
+			#steps {
+				@apply(--layout-flex-10);
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+			#controls {
+				@apply(--layout-flex-2);
+				@apply(--layout-horizontal);
+				@apply(--layout-center);
+			}
+			.bypassed {
+				opacity: 0.4;
+				/*background-color: red !important;*/
+			}
 
-    </style>
-    <div id="container" class$="{{_bypassClass}}">
+		</style>
+		<div id="container" class$="{{_bypassClass}}">
+			<div id='title'>{{title}}</div>
+			<div id='steps'>
+				<template is='dom-repeat' items="{{sequence.steps}}">
+					<sequencer-track-step state='{{item.value}}'></sequencer-track-step>
+				</template>
+			</div>
 
-      <div id='title'>{{title}}</div>
+			<div id='controls'>
+				<volume-knob id='volume' volume='{{volume}}'></volume-knob>
+				<mute-button mute={{mute}}></mute-button>
+				<solo-button solo={{solo}}></solo-button>
+				<paper-icon-button id='preview' icon="refresh" on-tap='reset'></paper-icon-button>
+				<paper-icon-button id='preview' icon="arrow-forward" on-tap='preview'></paper-icon-button>
+				<paper-icon-button id='preview' icon="check-box-outline-blank" on-tap='preview'></paper-icon-button>
+			</div>
 
-      <div id='steps'>
-        <template is='dom-repeat' items="{{steps}}">
-          <sequencer-track-step state='{{item.value}}'></sequencer-track-step>
-        </template>
-      </div>
+		</div>
 
-      <div id='controls'>
-        <paper-slider min='0' max='100' value='{{_volume}}'></paper-slider>
-        <mute-button mute={{mute}}></mute-button>
-        <solo-button solo={{solo}}></solo-button>
-        <paper-icon-button id='preview' icon="refresh" on-tap='reset'></paper-icon-button>
-        <paper-icon-button id='preview' icon="arrow-forward" on-tap='preview'></paper-icon-button>
-        <paper-icon-button id='preview' icon="check-box-outline-blank" on-tap='preview'></paper-icon-button>
-      </div>
+	</template>
+	<script>
+	(function() {
+		'use strict';
 
-    </div>
+		var context;
 
-  </template>
-  <script>
-  (function() {
-    'use strict';
+		Polymer({
+			is: 'sequencer-track',
+			_reset: Boolean,
+			_step: Number, // ZERO BASED //
+			mute: Boolean,
+			_bypassClass: String,
 
-    var context;
+			properties: {
+				solo: {
+					type: Boolean,
+					value: false,
+					reflectToAttribute: true,        
+					notify: true,
+					observer: 'updateSolo'
+				},
+				sound: {
+					type: Object
+				},
+				volume: {
+					type: Number,
+					notify: true
+				},
+				context: {
+					type: Object
+				},
+				sequence: {
+					type: Object,
+					notify: true
+				}
+			},
 
-    Polymer({
-      is: 'sequencer-track',
-      _reset: Boolean,
-      _step: Number, // ZERO BASED //
-      _volume: Number,
-      mute: Boolean,
-      _bypassClass: String,
+			behaviors: [Polymer.RequesterBehavior],
 
-      properties: {
-        solo: {
-          type: Boolean,
-          value: false,
-          reflectToAttribute: true,        
-          notify: true,
-          observer: 'updateSolo'
-        },
-        siblingSoloed: {
-          type: Boolean,
-          value: false,
-          observer: 'updateBypass'
-        },
-        sound: {
-          type: Object
-        },
-        context: {
-          type: Object
-        },
-        steps: {
-          type: Array,
-          value: function() { return [
-            {'value': 0},
-            {'value': 1},
-            {'value': 0},
-            {'value': 3},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0},
-            {'value': 0}];
-          },
-          notify: true
-        }
-      },
+			attached: function() {
+				this._reset = false;
+				this._step = 0;
+				this.mute = false;
+				this.volume = 60;
+				this._bypassClass = false;
 
-      ready: function() {
-        this._reset = false;
-        this._step = 0;
-        this._volume = 80;
-        this.mute = false;
-        this._bypassClass = false;
-      },
-      setContext: function(context) {
-        this.context = context;
-        return this;
-      },
-      updateSolo: function() {
-        this.fire('soloChange', {solo: this.solo, track: this.id});
-      },
-      updateBypass: function() {
-        this._bypassClass = (this.siblingSoloed && !this.solo) ? 'bypassed' : '';
-      },
-      loadSequence: function(sequence) {
-        this.steps = sequence.steps;
-        return this;
-      },
-      loadSound: function(soundFile) {
-        this.sound = this.context.getSoundFile();
-        this.sound.loadSound(soundFile);
-        return this;
-      },
-      preview: function() {
-        this.playSound(null, this.getVolume());
-      },
-      getVolume: function() {
-        return (this._volume / 100);
-      },
-      getStepVolume: function() {
-        return this.getVolume() * this.getStepReductionFactor();
-      },
-      getStepReductionFactor: function() {
-        var value = 0.6; // 1
-        value += (this.steps[this._step].value - 1) * 0.2;
+				this.loadDependencies();
+			},
+			loadDependencies: function() {
+				try {
+					this.group = this.requestInstance('sequencer-track-group');
+				}
+				catch(e) {
+					throw e;
+				}
+			},
+			setContext: function(context) {
+				this.context = context;
+				return this;
+			},
+			updateSolo: function() {
+				if (this.group)
+					this.group.updateGroupSolo();
 
-        return value;
-      },
-      playSound: function(time, volume) {
-        this.sound.volume = volume;
-        this.sound.play(time);
-      },
-      playNextStep(time) {
-        if (this._reset) {
-          this._step = 1;
-          this._reset = false;
-        }
-        if ((this.steps[this._step].value > 0 && !this.mute) && (!this.siblingSoloed || this.solo)) {
-          this.playSound(time, this.getStepVolume());
-        }
-        this.activateStep();
+				// this.fire('soloChange', {solo: this.solo, track: this.id});
+			},
+			updateBypass: function() {
+				this._bypassClass = (this.group && this.group.hasSolo && !this.solo) ? 'bypassed' : '';
+				console.log(this._bypassClass);
+			},
+			loadSequence: function(sequence) {
+				this.sequence = sequence;
+				return this;
+			},
+			loadSound: function(soundFile) {
+				this.sound = this.context.getSoundFile();
+				this.sound.loadSound(soundFile);
+				return this;
+			},
+			preview: function() {
+				this.playSound(null, this.getVolume());
+			},
+			getVolume: function() {
+				return (this.volume / 100);
+			},
+			getStepVolume: function() {
+				return this.getVolume() * this.getStepReductionFactor();
+			},
+			getStepReductionFactor: function() {
+				var value = 0.6; // 1
+				value += (this.sequence.steps[this._step].value - 1) * 0.2;
 
-        this.increment();
-      },
-      increment: function() {
-        this._step += 1;
-        if (this._step >= 16)
-          this._step = 0;
-      },
-      reset: function() {
-        this._reset = true;
-      },
-      activateStep: function() {
-        var steps = Polymer.dom(this.root).querySelectorAll('sequencer-track-step');
+				return value;
+			},
+			playSound: function(time, volume) {
+				this.sound.volume = volume;
+				this.sound.play(time);
+			},
+			groupSolo: function() {
+				return (this.group) ? this.group.hasSolo : false;
+			},
+			playNextStep(time) {
+				if (this._reset) {
+					this._step = 1;
+					this._reset = false;
+				}
+				if ((this.sequence.steps[this._step].value > 0 && !this.mute) && (!this.groupSolo() || this.solo)) {
+					this.playSound(time, this.getStepVolume());
+				}
+				this.activateStep();
 
-        for(var i = 0; i < this.steps.length; i++) {
-          if (i == this._step)
-            steps[i].setActive(true);
-          else
-            steps[i].setActive(false);
-        }
-      }
-    });
-  })();
-  </script>
+				this.increment();
+			},
+			increment: function() {
+				this._step += 1;
+				if (this._step >= 16)
+					this._step = 0;
+			},
+			reset: function() {
+				this._reset = true;
+			},
+			activateStep: function() {
+				var steps = Polymer.dom(this.root).querySelectorAll('sequencer-track-step');
+
+				for(var i = 0; i < this.sequence.steps.length; i++) {
+					if (i == this._step)
+						steps[i].setActive(true);
+					else
+						steps[i].setActive(false);
+				}
+			}
+		});
+	})();
+	</script>
 </dom-module>

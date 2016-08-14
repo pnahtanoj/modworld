@@ -1,0 +1,84 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <title>sequencer-track-group</title>
+
+  <script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+  <script src="../bower_components/web-component-tester/browser.js"></script>
+
+  <!-- Step 1: import the element to test -->
+  <link rel="import" href="../elements/sequencer-track-group/sequencer-track-group.html">
+
+</head>
+<body>
+
+<test-fixture id="basic">
+  <template>
+    <sequencer-track-group></sequencer-track-group>
+  </template>
+</test-fixture>
+
+<test-fixture id="withTracks">
+  <template>
+    <sequencer-track-group>
+      <sequencer-track id='first'></sequencer-track>
+      <sequencer-track></sequencer-track>
+      <sequencer-track></sequencer-track>
+    </sequencer-track-group>
+  </template>
+</test-fixture>
+
+<script>
+  suite('sequencer-track-group tests, no tracks', function() {
+    var element;
+
+    setup(function() {
+      element = fixture('basic');
+    });
+
+    test('getTracks should return empty', function() {
+      expect(element.getTracks().length).to.equal(0);
+    });
+
+    test('hasSoloedTrack should return false', function() {
+      expect(element.hasSoloedTrack()).to.equal(false);
+    });
+
+  });
+
+  suite('sequencer-track-group tests, with tracks', function() {
+    var element;
+
+    setup(function() {
+      element = fixture('withTracks');
+    });
+
+    test('getTracks should return empty', function() {
+      expect(element.getTracks().length).to.equal(3);
+    });
+
+    test('hasSoloedTrack should return false', function() {
+      expect(element.hasSoloedTrack()).to.equal(false);
+    });
+
+    test('hasSoloedTrack should return true if any child soloed', function() {
+      // console.log(element.querySelectorAll('#first').solo);
+      expect(element.hasSoloedTrack()).to.equal(true);
+    });
+
+  });  
+</script>
+
+</body>
+</html>

@@ -9,46 +9,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<link rel="import" href="../../behaviors/provider.html">
 
-<dom-module id="rack-workspace">
+<dom-module id="volume-knob">
 	<template>
-		<style include="iron-flex iron-flex-alignment"></style>
 		<style>
 			:host {
 				display: block;
 			}
 		</style>
-
-		<audio-api id='audioContext' name='audioContext'></audio-api>
-
-		<div class='layout horizontal center row'>
-			<audio-clock class='flex'></audio-clock>
-			<audio-metronome></audio-metronome>
-		</div>
-		
-		<div class='row'>
-			<drum-machine id='d1'></drum-machine>
-		</div>
-
+		<webaudio-knob id='volume' sprites="100" min="0" max="100" diameter='32' 
+			on-change='updateVolume'></webaudio-knob>
 	</template>
 	<script>
 	(function() {
 		'use strict';
 
 		Polymer({
-			is: 'rack-workspace',
+			is: 'volume-knob',
 
 			properties: {
+				volume: {
+					type: Number,
+					value: 0,
+					notify: true,
+					observer: 'setVolume'
+				}
 			},
-
-		    behaviors: [Polymer.ProviderBehavior],
-			created() {
-				this.provideInstance('workspace', this);
+			setVolume: function(volume) {
+        		Polymer.dom(this.root).querySelector('webaudio-knob')
+        			.setValue((volume > 100 || volume < 0) ? 0 : volume);
 			},
-			publish: function(name, object) {
-				this.provideInstance(name, object);
-			}
+			updateVolume: function(event) {
+				this.volume = event.target.value;
+			},			
 		});
 	})();
 	</script>

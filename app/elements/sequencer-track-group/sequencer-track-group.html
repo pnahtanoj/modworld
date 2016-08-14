@@ -11,43 +11,56 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../behaviors/provider.html">
 
-<dom-module id="rack-workspace">
+<dom-module id="sequencer-track-group">
 	<template>
-		<style include="iron-flex iron-flex-alignment"></style>
 		<style>
 			:host {
 				display: block;
 			}
 		</style>
-
-		<audio-api id='audioContext' name='audioContext'></audio-api>
-
-		<div class='layout horizontal center row'>
-			<audio-clock class='flex'></audio-clock>
-			<audio-metronome></audio-metronome>
-		</div>
-		
-		<div class='row'>
-			<drum-machine id='d1'></drum-machine>
-		</div>
-
+		<content></content>
 	</template>
 	<script>
 	(function() {
 		'use strict';
 
 		Polymer({
-			is: 'rack-workspace',
+			is: 'sequencer-track-group',
 
 			properties: {
+				hasSolo: {
+					type: Boolean,
+					notify: true
+				}
 			},
 
 		    behaviors: [Polymer.ProviderBehavior],
 			created() {
-				this.provideInstance('workspace', this);
+				this.provideInstance('sequencer-track-group', this);
 			},
-			publish: function(name, object) {
-				this.provideInstance(name, object);
+			updateGroupSolo: function() {
+				this.hasSolo = this.hasSoloedTrack();
+				this.updateChildrenSolos();
+			},
+			hasSoloedTrack: function() {
+				let tracks = this.getTracks();
+				for(let i = 0; i < tracks.length; i++) {
+					if (tracks[i].solo)
+						return true;
+				}
+
+				return false;
+			},
+			updateChildrenSolos: function() {
+				let tracks = this.getTracks();
+				for(let i = 0; i < tracks.length; i++) {
+					tracks[i].updateBypass();
+				}
+
+				return false;
+			},			
+			getTracks: function() {
+				return Polymer.dom(this).querySelectorAll('sequencer-track');
 			}
 		});
 	})();

@@ -9,6 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../behaviors/requester.html">
 
 <dom-module id="audio-clock">
   <template>
@@ -61,10 +62,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: Object,
           notify: true
         },
-        ready: {
-          type: Boolean,
-          value: false
-        },
         tempo: {
           type: Number,
           value: 120,
@@ -72,38 +69,47 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
         availableRates: {
           type: Array,
-          value: ['4:1','2:1','1:1','1:2','1:4']
+          value: [
+            '4:1',
+            '2:1',
+            '1:1',
+            '1:2',
+            '1:4'
+            ]
         },
         currentStep: {
           type: Number,
           value: 1
         },
       },
+      behaviors: [Polymer.RequesterBehavior],
 
-      ready: function() {
-        // Initialize callback arrays //
+      attached: function() {
+        // GET DEPENDENCIES! //
+        // WORKSPACE REQUIRED FOR PUBLISHING API TO REST OF SYSTEM //
+        try {
+          this.workspace = this.requestInstance('workspace');
+        }
+        catch(e) {
+          throw e;
+        }
+
+        // AUDIO API REQUIRED FOR TIMING //
+        try {
+          this.audio = this.requestInstance('audio-api');
+        }
+        catch(e) {
+          throw e;
+        }
+
+        this.workspace.publish('audio-clock', this);
+
         for(var i = 0; i < this.availableRates.length; i++) {
           this.callbacks[this.availableRates[i]] = [];
         }
       },
-      startToggle: function() {
-        if (this._isPlaying) {
-          this.stop();
-        } else {
-          this.start();          
-        }
-      },
-      start: function() {
-        this._isPlaying = true;
-        this._updateButton();
-        this.futureTickTime = this.context.getCurrentTime();
 
-        this._playLoop();
-      },
-      stop: function() {
-        this._isPlaying = false;
-        this._updateButton();
-      },
+      // CLOCKING SUBSCRIBER INTERFACE //
       connect: function(rate, input) {
         if (!this.callbacks[rate]) {
           return;
@@ -123,6 +129,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         });
         console.log('post disconnect: ', this.callbacks);
       },
+      // CLOCKING SUBSCRIBER INTERFACE //
+
+
+
+      // TRANSPORT, SHOULD BREAK THIS OUT //
+      startToggle: function() {
+        if (this._isPlaying) {
+          this.stop();
+        } else {
+          this.start();          
+        }
+      },
+      start: function() {
+        this._isPlaying = true;
+        this._updateButton();
+        this.futureTickTime = this.audio.getCurrentTime();
+
+        this._playLoop();
+      },
+      stop: function() {
+        this._isPlaying = false;
+        this._updateButton();
+      },
+      _updateButton: function() {
+        if (this._isPlaying)
+          this.$.playBtn.innerHTML = 'Stop';
+        else
+          this.$.playBtn.innerHTML = 'Play';
+      },
+      // TRANSPORT, SHOULD BREAK THIS OUT //
+
+
       _findRates() {
         var currentActiveRates = ['1:4']; // every tick, since we're maxing at 16ths for now //
         if (this.currentStep % 2 === 1) // EIGHTH //
@@ -142,7 +180,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (!this._isPlaying)
           return;
 
-        while(this.futureTickTime < this.context.getCurrentTime() + 0.1) {
+        while(this.futureTickTime < this.audio.getCurrentTime() + 0.1) {
           _.forEach(this._findRates(), (rate) => {
             _.forEach(this.callbacks[rate], (input) => {
               // console.log('PLAY: ', this.futureTickTime, input);
@@ -155,7 +193,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         t = window.setTimeout(this._playLoop.bind(this), 50.0);
       },
       _incrementClock: function() {
-          this.futureTickTime += this._timeSliceLength(); // 120 bpm;
+          this.futureTickTime += this._timeSliceLength();
           this.currentStep++;
           if (this.currentStep > 48) // Weird //
             this.currentStep = 1;
@@ -163,12 +201,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _timeSliceLength: function() {
         return (60/this.tempo) * 0.25; // 16ths
       },
-      _updateButton: function() {
-        if (this._isPlaying)
-          this.$.playBtn.innerHTML = 'Stop';
-        else
-          this.$.playBtn.innerHTML = 'Play';
-      }
     });
   })();
   </script>

@@ -9,6 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../behaviors/requester.html">
 
 <dom-module id="audio-metronome">
   <template>
@@ -53,32 +54,51 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _sliderClass: '',
 
       properties: {
+        audio: {
+          type: Object,
+          notify: true          
+        },
         clock: {
           type: Object,
           notify: true
         },
-        context: {
+        input: {
           type: Object,
-          notify: true          
+          notify: true
         }
       },
+      behaviors: [Polymer.RequesterBehavior],
 
-      observers: [
-        'clockReady(clock.ready)',
-        'contextReady(context.ready)'
-      ],
-
-      ready: function() {
+      attached: function() {
+        this.input = new Input({
+          'id': 'metronome:master',
+          'cb': this.play.bind(this)
+        });
         this._count = 4;
         this._volume = 40;
-        this._mute = false;
+        this._mute = true;
+        this._loadDependencies();
       },
-      clockReady: function() {
-        var input = new Input('metronome:master',this.play.bind(this));
-        this.clock.connect('1:1', input);
+      _loadDependencies: function() {
+        // AUDIO API REQUIRED FOR SOUND //
+        try {
+          this.audio = this.requestInstance('audio-api');
+        }
+        catch(e) {
+          throw e;
+        }
+
+        // AUDIO API REQUIRED FOR TIMING //
+        try {
+          this.clock = this.requestInstance('audio-clock');          
+        }
+        catch(e) {
+          throw e;
+        }
+
+        this.clock.connect('1:1', this.input);
       },
-      contextReady: function() {
-      },
+
       increment: function() {
         this._count += 1;
         if (this._count === 5)
@@ -94,10 +114,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (this._mute)
           return;
 
-        this._osc = this.context.getOsc();
-        this._gain = this.context.getGain();
+        this._osc = this.audio.getOsc();
+        this._gain = this.audio.getGain();
         this._osc.connect(this._gain);
-        this._gain.connect(this.context.getContext().destination);
+        this._gain.connect(this.audio.getContext().destination);
         this._gain.gain.value = (this._volume/100) / 2 ; // MAX 25%
         this._osc.start(time);
         this._osc.stop(time + 0.04);

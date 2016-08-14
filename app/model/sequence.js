@@ -33,5 +33,4 @@ class Sequence {
     }
     return this;
   }
-
 }

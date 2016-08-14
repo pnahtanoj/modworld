@@ -1,0 +1,29 @@
+<script>
+  Polymer.RequesterBehavior = {
+
+    requestProvider(key) {
+      let event = new CustomEvent('request-provider', {
+        detail: {key},
+        bubbles: true,
+        cancelable: true,
+      });
+      this.dispatchEvent(event);
+      if (event.defaultPrevented) {
+        return event.detail.provider;
+      } else {
+        throw new Error(`no provider found for ${key}`);
+      }
+    },
+
+    requestInstance(key) {
+      return this.requestProvider(key)();
+    },
+
+    value(key) {
+      return function() {
+        return this.requestInstance(key);
+      }
+    },
+
+  };
+</script>
